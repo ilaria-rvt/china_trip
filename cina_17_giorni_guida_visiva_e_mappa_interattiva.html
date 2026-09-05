@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Cina 17 Giorni - Guida Visiva e Mappa Interattiva</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #090d16;
+      color: #f8fafc;
+      width: 100%;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    #map {
+      width: 100%;
+      height: 100%;
+      min-height: 350px;
+      z-index: 1;
+      background-color: #1e293b;
+      border-radius: inherit;
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: #1e293b !important;
+      color: #f8fafc !important;
+      border-radius: 0.75rem !important;
+      border: 1px solid #334155 !important;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+    }
+    .leaflet-popup-tip {
+      background: #1e293b !important;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0f172a;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 10px;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col custom-scrollbar bg-slate-950 text-slate-100">
+
+  <header class="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-amber-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-red-500/20 shrink-0">
+            🇨🇳
+          </div>
+          <div>
+            <h1 class="text-base sm:text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-red-400 via-amber-300 to-blue-400 leading-tight">
+              Cina Express: Kung Fu, Natura & Metropoli
+            </h1>
+            <p class="text-[11px] sm:text-xs text-slate-400">Pechino ➔ Luoyang ➔ Guilin ➔ Shanghai (17 Giorni)</p>
+          </div>
+        </div>
+
+        <div class="sm:hidden">
+          <span id="fav-counter-badge-mobile" class="bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-full text-xs font-semibold">
+            ❤️ <span id="fav-count-mobile">0</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="hidden sm:flex items-center gap-2 text-xs">
+        <span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5">
+          <i class="fa-solid fa-map-pin"></i> 10 Tappe Base
+        </span>
+        <span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5">
+          <i class="fa-solid fa-calendar-days"></i> 17 Giorni
+        </span>
+        <span class="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5">
+          <i class="fa-solid fa-bed"></i> 1 Treno Notturno
+        </span>
+        <span class="bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5">
+          <i class="fa-solid fa-heart"></i> <span id="fav-count-desktop">0</span> Selezionate
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-6">
+
+    <div class="flex items-center justify-between bg-slate-900 p-1.5 rounded-2xl border border-slate-800 shadow-md">
+      <div class="grid grid-cols-2 w-full sm:w-auto gap-2">
+        <button id="tab-btn-map" onclick="switchMainTab('map')" class="py-2.5 px-5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-amber-500 text-slate-950 shadow-md flex items-center justify-center gap-2">
+          <i class="fa-solid fa-map-location-dot"></i> Mappa & Tappe
+        </button>
+        <button id="tab-btn-schedule" onclick="switchMainTab('schedule')" class="py-2.5 px-5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-calendar-check text-amber-400"></i> Programma 17 Giorni
+        </button>
+      </div>
+      <div class="hidden md:flex items-center gap-2 text-xs text-slate-400 pr-2">
+        <span class="px-2.5 py-1 bg-purple-950/60 border border-purple-500/40 text-purple-300 rounded-lg">🌙 1 Treno Notturno Salva-Tempo</span>
+        <span class="px-2.5 py-1 bg-slate-800 rounded-lg border border-slate-700 text-slate-300">🚄 Flessibilità Treni / Voli</span>
+      </div>
+    </div>
+
+    <div id="view-destinations-header" class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 bg-slate-900/80 p-3.5 sm:p-4 rounded-2xl border border-slate-800 shadow-lg">
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0 whitespace-nowrap">
+        <span class="text-xs font-bold text-slate-300 mr-1 shrink-0"><i class="fa-solid fa-filter text-amber-400 mr-1"></i> Filtra:</span>
+        <button id="btn-all" onclick="filterDestinations('all')" class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 shrink-0">
+          Tutte
+        </button>
+        <button id="btn-natura" onclick="filterDestinations('natura')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all border border-slate-700 shrink-0">
+          🏞️ Natura & Paesaggi
+        </button>
+        <button id="btn-storia" onclick="filterDestinations('storia')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all border border-slate-700 shrink-0">
+          🏛️ Storia & Kung Fu
+        </button>
+        <button id="btn-metropoli" onclick="filterDestinations('metropoli')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all border border-slate-700 shrink-0">
+          🏙️ Metropoli
+        </button>
+      </div>
+
+      <div class="text-[11px] sm:text-xs text-slate-400 flex items-center gap-1.5 font-medium shrink-0">
+        <i class="fa-solid fa-plane text-blue-400"></i> Opzione Voli interni da Guilin disponibile
+      </div>
+    </div>
+
+    <div id="view-destinations-map" class="flex flex-col lg:flex-row gap-5 sm:gap-6">
+      <div class="w-full lg:w-8/12 xl:w-9/12 rounded-2xl overflow-hidden border border-slate-800 shadow-xl relative h-[350px] sm:h-[450px] lg:h-[550px]">
+        <div id="map"></div>
+      </div>
+      
+      <div class="w-full lg:w-4/12 xl:w-3/12 flex flex-col bg-slate-900 rounded-2xl border border-slate-800 p-4 shadow-xl h-[350px] sm:h-[450px] lg:h-[550px]">
+        <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+           <i class="fa-solid fa-route text-amber-400"></i> Percorso: 10 Tappe (+1 Opz. Finale)
+        </h3>
+        <div id="timeline-list" class="space-y-2 overflow-y-auto custom-scrollbar pr-2 flex-grow">
+        </div>
+      </div>
+    </div>
+
+    <section id="view-destinations-cards" class="mt-4">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-compass text-amber-400"></i> Schede delle Destinazioni
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">Le 10 tappe del tour base di 17 giorni, con lo Yunnan spostato in fondo come estensione opzionale.</p>
+        </div>
+      </div>
+
+      <div id="cards-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      </div>
+    </section>
+
+    <section id="view-schedule-container" class="hidden flex-col gap-6">
+      <div class="bg-gradient-to-r from-slate-900 via-purple-950/40 to-slate-900 p-5 rounded-2xl border border-purple-900/40 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg sm:text-xl font-extrabold text-white flex items-center gap-2">
+            <i class="fa-solid fa-calendar-days text-amber-400"></i> Programma Esecutivo 17 Giorni
+          </h2>
+          <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+            Pianificato con 1 treno notturno (Xi'an ➔ Chengdu). A Shanghai dedichiamo i giorni giusti di visita senza forzature, valutando il rientro via treno ad alta velocità o con due comodi voli interni da Guilin.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          <span class="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[11px] sm:text-xs px-3 py-1.5 rounded-xl font-semibold flex items-center gap-1.5">
+            <i class="fa-solid fa-moon"></i> 1 Treno Notturno
+          </span>
+          <span class="bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-[11px] sm:text-xs px-3 py-1.5 rounded-xl font-semibold">
+            🚄 100% Terrestre o Voli
+          </span>
+        </div>
+      </div>
+
+      <div id="schedule-days-list" class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5">
+      </div>
+    </section>
+
+    <section class="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl my-4">
+      <h3 class="text-base sm:text-lg font-bold text-amber-400 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-circle-info"></i> Note Logistiche: Treni ad Alta Velocità vs. Voli da Guilin
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 text-xs sm:text-sm text-slate-300">
+        <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+          <div class="font-bold text-white mb-1.5 flex items-center gap-2">
+            <i class="fa-solid fa-plane text-blue-400"></i> 1. Alternativa Voli da Guilin
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Se preferisci evitare le circa 9 ore di treno ad alta velocità da Guilin a Shanghai, puoi optare per un rapido volo interno (es. Guilin ➔ Shanghai con scalo o diretto), accorciando i tempi di trasferimento.
+          </p>
+        </div>
+
+        <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+          <div class="font-bold text-white mb-1.5 flex items-center gap-2">
+            <i class="fa-solid fa-bed text-purple-400"></i> 2. Treno Notturno Soft Sleeper
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Il treno notturno sulla tratta Xi'an ➔ Chengdu rimane l'ideale per trasformare il viaggio in ore di sonno, risparmiando 1 notte in hotel e guadagnando un giorno intero di visite.
+          </p>
+        </div>
+
+        <div class="bg-slate-950/60 p-4 rounded-xl border border-purple-900/40">
+          <div class="font-bold text-purple-300 mb-1.5 flex items-center gap-2">
+            <i class="fa-solid fa-mountain text-purple-400"></i> 3. Yunnan (Opzionale)
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Lo Yunnan (Foresta di Pietra e Kunming) è stato spostato alla fine come estensione extra per chi desidera aggiungere 2-3 giorni in più senza spezzare il ritmo lineare delle tappe principali.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="bg-slate-950 border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+    <p>Guida Interattiva di Viaggio in Cina • 17 Giorni Base + Yunnan</p>
+  </footer>
+
+  <script>
+    const scheduleData = [
+      {
+        day: 1,
+        title: "Arrivo a Pechino",
+        destId: "beijing",
+        locName: "Pechino (Beijing)",
+        badge: "🛬 Arrivo & Hutong",
+        transport: "Volo di arrivo, trasferimento in centro",
+        activities: [
+          "Check-in in hotel a Pechino e primo giro a piedi",
+          "Passeggiata serale tra gli storici vicoli Hutong (Nanluoguxiang)",
+          "Cena tradizionale con Anatra Laccata alla pechinese"
+        ]
+      },
+      {
+        day: 2,
+        title: "Pechino Imperiale",
+        destId: "beijing",
+        locName: "Pechino",
+        badge: "🏛️ Storia Imperiale",
+        transport: "Metropolitana locale",
+        activities: [
+          "Mattina: Piazza Tienanmen e la maestosa Città Proibita",
+          "Panorama a 360° sulla Città Proibita dal Parco Jingshan",
+          "Pomeriggio: Tempio del Cielo (Tiantan) e parchi reali"
+        ]
+      },
+      {
+        day: 3,
+        title: "Grande Muraglia & Palazzo d'Estate",
+        destId: "beijing",
+        locName: "Pechino",
+        badge: "🧱 Muraglia Cinese",
+        transport: "Driver privato / Bus per Mutianyu",
+        activities: [
+          "Escursione alla Grande Muraglia a Mutianyu (funivia e discesa in toboggan!)",
+          "Rientro nel pomeriggio e visita al rilassante Palazzo d'Estate (Yihe Yuan)",
+          "Vista serale dall'esterno dello Stadio Olimpico (Nido d'Uccello)"
+        ]
+      },
+      {
+        day: 4,
+        title: "Pechino ➔ Luoyang (Grotte di Longmen)",
+        destId: "luoyang_shaolin",
+        locName: "Luoyang (Henan)",
+        badge: "🏛️ Grotte Millenarie",
+        transport: "Treno ad Alta Velocità G-Train (~3.5 ore)",
+        activities: [
+          "Treno superveloce mattutino da Pechino West a Luoyang Longmen",
+          "Visita alle imponenti Grotte di Longmen (migliaia di statue di Buddha scolpite sul fiume Yi)",
+          "Passeggiata serale nel borgo antico di Luoyang (Lijingmen City Gate) e cena locale"
+        ]
+      },
+      {
+        day: 5,
+        title: "Tempio Shaolin (Kung Fu) ➔ Xi'an",
+        destId: "luoyang_shaolin",
+        locName: "Dengfeng / Luoyang ➔ Xi'an",
+        badge: "🥋 Kung Fu & Monastero",
+        transport: "Private Car/Bus per Shaolin + Treno Veloce per Xi'an (~1.5 ore)",
+        activities: [
+          "Escursione mattutina al leggendario Tempio Shaolin sulle montagne Songshan",
+          "Assistere allo straordinario SPETTACOLO DAL VIVO di Kung Fu dei Monaci Shaolin!",
+          "Visita al Pagoda Forest e rientro alla stazione per il treno veloce delle 18:00 verso Xi'an"
+        ]
+      },
+      {
+        day: 6,
+        title: "Xi'an (Esercito di Terracotta) ➔ Treno Notturno",
+        destId: "xian",
+        locName: "Xi'an ➔ (Treno Notturno per Chengdu)",
+        badge: "🌙 Treno Notturno",
+        transport: "Bus locale + Treno Notturno Cuccetta (Soft Sleeper) per Chengdu",
+        overnight: true,
+        activities: [
+          "Mattina: Visita allo straordinario Museo dell'Esercito di Terracotta",
+          "Giro in bicicletta sopra le integre e ciclopiche Mura Antiche di Xi'an",
+          "Cena a base di street food nel Quartiere Musulmano",
+          "In serata: Imbarco sul TRENO NOTTURNO CUCCETTA direzione Chengdu. Pernottamento in cuccetta e arrivo al mattino!"
+        ]
+      },
+      {
+        day: 7,
+        title: "Chengdu: Panda Giganti ➔ Chongqing",
+        destId: "chengdu",
+        locName: "Chengdu ➔ Chongqing",
+        badge: "🐼 Panda Giganti",
+        transport: "Arrivo col Treno Notturno + Metro + Treno veloce per Chongqing (1.5h)",
+        activities: [
+          "Arrivo al mattino a Chengdu riposati col treno notturno!",
+          "Mattinata alla famosa Base di Ricerca dei Panda Giganti",
+          "Pomeriggio rilassante con tè al Parco del Popolo e passeggiata a Kuanzhai Alley",
+          "Treno ad alta velocità per Chongqing (1,5 ore) e pernottamento a Chongqing"
+        ]
+      },
+      {
+        day: 8,
+        title: "Chongqing: La Metropoli Cyberpunk",
+        destId: "chongqing",
+        locName: "Chongqing",
+        badge: "🏙️ Metropoli Verticale",
+        transport: "Metropolitana e Monorotaia",
+        activities: [
+          "Visita alla stazione Liziba (il treno monorotaia che attraversa un palazzo)",
+          "Passeggiata nel borgo storico di Ciqikou e traversata in funivia dello Yangtze",
+          "Spettacolo notturno delle luci di Hongya Cave e cena con Hot Pot del Sichuan"
+        ]
+      },
+      {
+        day: 9,
+        title: "Chongqing ➔ Zhangjiajie",
+        destId: "zhangjiajie",
+        locName: "Zhangjiajie (Wulingyuan)",
+        badge: "⛰️ Verso le Montagne",
+        transport: "Treno ad Alta Velocità (~5 ore)",
+        activities: [
+          "Treno panoramico nel primo pomeriggio da Chongqing a Zhangjiajie",
+          "Arrivo e sistemazione nell'hotel di Wulingyuan",
+          "Serata rilassante ai piedi delle montagne di Avatar"
+        ]
+      },
+      {
+        day: 10,
+        title: "Zhangjiajie: Le Montagne di Avatar",
+        destId: "zhangjiajie",
+        locName: "Zhangjiajie",
+        badge: "🏞️ Parco Nazionale Avatar",
+        transport: "Navetta parco & Ascensore Bailong",
+        activities: [
+          "Giornata intera tra i pilastri rocciosi del Parco Nazionale Forestale",
+          "Salita mozzafiato con l'Ascensore panoramico Bailong ed esplorazione di Yuanjiajie",
+          "Ammirare la 'Montagna Hallelujah di Avatar' e i picchi della montagna Tianzi"
+        ]
+      },
+      {
+        day: 11,
+        title: "Tianmen Mountain ➔ Furong Town",
+        destId: "furong",
+        locName: "Monte Tianmen ➔ Furong Town",
+        badge: "🌊 Cascata di Sera",
+        transport: "Funivia Tianmen + Treno breve (~30 min)",
+        activities: [
+          "Mattina: Monte Tianmen (funivia più lunga al mondo e salita alla Porta del Cielo)",
+          "Brevissimo treno veloce per il borgo antico di Furong Town",
+          "Passeggiata serale tra le palafitte tradizionali illuminate direttamente sopra le cascate"
+        ]
+      },
+      {
+        day: 12,
+        title: "Furong Town ➔ Fenghuang",
+        destId: "fenghuang",
+        locName: "Fenghuang (Città della Fenice)",
+        badge: "🏮 Borgo Antico sul Fiume",
+        transport: "Treno veloce breve (~30 min)",
+        activities: [
+          "Treno mattutino per la romantica città antica di Fenghuang",
+          "Esplorazione delle palafitte tradizionali Diaojiaolou dell'etnia Miao",
+          "Giro in barca serale sul fiume Tuojiang circondati da lanterne rosse"
+        ]
+      },
+      {
+        day: 13,
+        title: "Fenghuang ➔ Guilin & Yangshuo",
+        destId: "guilin_yangshuo",
+        locName: "Yangshuo",
+        badge: "🏞️ Picchi Carsici",
+        transport: "Treno veloce (~3.5h) + Trasferimento",
+        activities: [
+          "Treno veloce mattutino da Fenghuang a Guilin e trasferimento a Yangshuo",
+          "Giro in bicicletta / scooter elettrico nella Ten Mile Gallery tra i picchi calcarei",
+          "Serata vivace lungo la West Street di Yangshuo"
+        ]
+      },
+      {
+        day: 14,
+        title: "Yangshuo & Relax",
+        destId: "guilin_yangshuo",
+        locName: "Yangshuo",
+        badge: "🚣 Zattere & Campagna",
+        transport: "Zattera bambù e Scooter elettrico",
+        activities: [
+          "Discesa in zattera di bambù lungo il panoramico Fiume Yulong",
+          "Salita al punto panoramico di Monte Xianggong per la vista cartolina sul fiume Li",
+          "Pomeriggio libero per rilassarsi o esplorare in scooter le risaie circostanti"
+        ]
+      },
+      {
+        day: 15,
+        title: "Guilin ➔ Shanghai (o volo opzionale)",
+        destId: "shanghai",
+        locName: "Shanghai",
+        badge: "🚄 Verso la Costa",
+        transport: "Treno ad Alta Velocità (HSR) ~9 ore (oppure volo interno)",
+        activities: [
+          "Mattina: Trasferimento da Guilin a Shanghai (via HSR diurno o valutando un comodo volo interno)",
+          "Arrivo a Shanghai nel tardo pomeriggio/serata",
+          "Check-in in hotel e primissima passeggiata sul lungofiume The Bund illuminato"
+        ]
+      },
+      {
+        day: 16,
+        title: "Shanghai: Visita Cittadina",
+        destId: "shanghai",
+        locName: "Shanghai",
+        badge: "🏙️ Metropoli & Contrasti",
+        transport: "Metropolitana",
+        activities: [
+          "Mattina: Visita al classico Giardino Yuyuan e all'adiacente Bazaar antico",
+          "Passeggiata nella storica Ex Concessione Francese e nei vicoli artistici di Tianzifang",
+          "Pomeriggio: Salita sulla Shanghai Tower (632m) e passeggiata a Nanjing Road"
+        ]
+      },
+      {
+        day: 17,
+        title: "Shanghai ➔ Volo di Rientro",
+        destId: "shanghai",
+        locName: "Shanghai ➔ Italia",
+        badge: "🛫 Maglev & Partenza",
+        transport: "Treno Maglev (431 km/h) per l'aeroporto",
+        activities: [
+          "Ultima mattinata a disposizione per ultimi acquisti o relax",
+          "Trasferimento in aeroporto sfrecciando a 431 km/h sul treno Maglev",
+          "Volo di rientro in Italia da Shanghai Pudong. Fine del viaggio."
+        ]
+      }
+    ];
+
+    const destinations = [
+      {
+        id: 'beijing',
+        name: 'Pechino (Beijing)',
+        category: 'storia',
+        coords: [39.9042, 116.4074],
+        bannerGradient: 'from-amber-900 via-red-900 to-slate-900',
+        bannerIcon: 'fa-archway',
+        bannerPattern: '🏛️',
+        googleSearchUrl: 'https://www.google.com/search?tbm=isch&q=Beijing+Forbidden+City+Great+Wall+China',
+        highlights: [
+          'La Città Proibita & Piazza Tienanmen',
+          'Grande Muraglia (Sezione Mutianyu)',
+          'Il Tempio del Cielo e Palazzo d\'Estate',
+          'Passeggiata negli Hutong e Anatra Laccata'
+        ],
+        desc: 'Il cuore imperiale della Cina. Cammina sulla Grande Muraglia, esplora la favolosa Città Proibita e assaggia l\'autentica anatra pechinese.',
+        type: '🏛️ Tappa 1 • Storia Imperiale'
+      },
+      {
+        id: 'luoyang_shaolin',
+        name: 'Luoyang & Tempio Shaolin',
+        category: 'storia',
+        coords: [34.55, 112.65],
+        bannerGradient: 'from-orange-950 via-amber-900 to-slate-900',
+        bannerIcon: 'fa-hand-fist',
+        bannerPattern: '🥋',
+        googleSearchUrl: 'https://www.google.com/search?tbm=isch&q=Luoyang+Longmen+Grottoes+Shaolin+Temple+Kung+Fu',
+        highlights: [
+          'Tempio Shaolin & Show dal vivo dei Monaci Kung Fu',
+          'Grotte di Longmen (migliaia di Buddha scolpiti nella roccia)',
+          'Foresta di Pagode sulle montagne Songshan',
+          'Antica capitale millenaria dell\'Henan'
+        ],
+        desc: 'La culla delle arti marziali e della cultura buddista. Guarda le acrobazie dei Monaci Shaolin e rimani a bocca aperta davanti alle imponenti Grotte di Longmen.',
+        type: '🏛️ Tappa 2 • Tempio Shaolin & Grotte'
+      },
+      {
+        id: 'xian',
+        name: 'Xi\'an',
+        category: 'storia',
+        coords: [34.3416, 108.9398],
+        bannerGradient: 'from-amber-950 via-purple-950 to-slate-900',
+        bannerIcon: 'fa-landmark',
+        bannerPattern: '🌙',
+        googleSearchUrl: 'https://www.google.com/search?tbm=isch&q=Xi%27an+Terracotta+Army+Ancient+City+Wall',
+        highlights: [
+          'L\'Esercito di Terracotta',
+          'Giro in bici sulle Mura Antiche',
+          'Quartiere Musulmano e Street Food',
+          '🌙 Partenza Treno Notturno Cuccetta per Chengdu'
+        ],
+        desc: 'L\'antica capitale all\'inizio della Via della Seta. Famosa per i guerrieri di Terracotta e per il Treno Notturno Cuccetta diretto a Chengdu.',
+        type: '🏛️ Tappa 3 • Esercito & Treno Notturno'
+      },
+      {
+        id: 'chengdu',
+        name: 'Chengdu',
+        category: 'natura',
+        coords: [30.5728, 104.0668],
+        bannerGradient: 'from-teal-950 via-emerald-900 to-slate-900',
+        bannerIcon: 'fa-paw',
+        bannerPattern: '🐼',
+        googleSearchUrl: 'https://www.google.com/search?tbm=isch&q=Chengdu+Giant+Panda+Base+Leshan+Giant+Buddha',
+        highlights: [
+          'Arrivo fresco al mattino col Treno Notturno',
+          'Base dei Panda Giganti',
+          'Antiche case da tè al Parco Popolare',
+          'Cucina del Sichuan'
+        ],
+        desc: 'Capitale della vita rilassata, dei panda giganti e del cibo del Sichuan. Raggiunta al mattino col treno notturno per godersi al massimo la giornata.',
+        type: '🏞️ Tappa 4 • Panda & Relax'
+      },
+      {
+        id: 'chongqing',
+        name: 'Chongqing',
+        category: 'metropoli',
+        coords: [29.5630, 106.5516],
+        bannerGradient: 'from-fuchsia-950 via-purple-900 to-slate-900',
+        bannerIcon: 'fa-train-subway',
+        bannerPattern: '⚡',
+        googleSearchUrl: 'https://www.google.com/search?tbm=isch&q=Chongqing+Hongya+Cave+Liziba+train+cyberpunk',
+        highlights: [
+          'Hongya Cave: villaggio multilivello illuminato',
+          'Stazione Liziba: il treno che entra nel palazzo',
+          'Città Cyberpunk e funivia sullo Yangtze',
+          'Hot Pot piccante originale'
+        ],
+        desc: 'La megalopoli cyberpunk verticale. Treni che attraversano i condomini, grattacieli a palafitta e luci al neon mozzafiato.',
+        type: '🏙️ Tappa 5 • Città Cyberpunk'
+      },
+      {
+        id: 'zhangjiajie',
+        name: 'Zhangjiajie',
+        category: 'natura',
+        coords: [29.1171, 110.4784],
+        bannerGradient: 'from-emerald-950 via-green-900 to-slate-900',
+        bannerIcon: 'fa-mountain',
+        bannerPattern: '⛰️',
+        googleSearchUrl: 'https://www.google.com/search?tbm=isch&q=Zhangjiajie+National+Forest+Park+Avatar+Tianmen+Mountain',
+        highlights: [
+          'Montagne di Avatar (Yuanjiajie)',
+          'Monte Tianmen e la Porta del Cielo',
+          'Ascensore panoramico Bailong',
+          'Ponte di Vetro nel Gran Canyon'
+        ],
+        desc: 'Spettacolari colonne rocciose che sembrano fluttuare nella nebbia. Il paesaggio naturale che ha inspirato il film Avatar.',
+        type: '🏞️ Tappa 6 • Montagne Avatar'
+      },
+      {
+        id: 'furong',
+        name: 'Furong Town',
+        category: 'storia',
+        coords: [28.7231, 109.9483],
+        bannerGradient: 'from-cyan-950 via-blue-900 to-slate-900',
+        bannerIcon: 'fa-water',
+        bannerPattern: '🌊',
+        googleSearchUrl: 'https://www.google.com/search?tbm=isch&q=Furong+town+waterfall+Hunan+China',
+        highlights: [
+          'Borgo antico sospeso sulla cascata',
+          'Illuminazione serale fantastica delle palafitte',
+          'Stradine tradizionali in pietra dell\'etnia Tujia'
+        ],
+        desc: 'Un villaggio fiabesco sospeso direttamente sopra una cascata scrosciante, che di sera si illumina come in un sogno.',
+        type: '🏛️ Tappa 7 • Borgo sulle Cascate'
+      },
+      {
+        id: 'fenghuang',
+        name: 'Fenghuang (Città della Fenice)',
+        category: 'storia',
+        coords: [27.9483, 109.5986],
+        bannerGradient: 'from-rose-950 via-red-900 to-slate-900',
+        bannerIcon: 'fa-bridge',
+        bannerPattern: '🏮',
+        googleSearchUrl: 'https://www.google.com/search?tbm=isch&q=Fenghuang+ancient+town+Hunan+night',
+        highlights: [
+          'Città antica sul fiume Tuojiang',
+          'Palafitte tradizionali Diaojiaolou',
+          'Giro in barca tra lanterne rosse'
+        ],
+        desc: 'Una delle città antiche più romantiche della Cina, celebre per le case in legno a palafitta, le lanterne rosse e i ponti in pietra.',
+        type: '🏛️ Tappa 8 • Città Antica della Fenice'
+      },
+      {
+        id: 'guilin_yangshuo',
+        name: 'Guilin & Yangshuo',
+        category: 'natura',
+        coords: [24.7781, 110.4908],
+        bannerGradient: 'from-emerald-900 via-teal-900 to-slate-900',
+        bannerIcon: 'fa-mountain-sun',
+        bannerPattern: '🏞️',
+        googleSearchUrl: 'https://www.google.com/search?tbm=isch&q=Yangshuo+Guilin+Li+River+bamboo+raft',
+        highlights: [
+          'Zattere di bambù sul Fiume Yulong',
+          'Colline carsiche e Ten Mile Gallery',
+          'Vista panoramica dal Monte Xianggong',
+          'Atmosfera rilassata di Yangshuo'
+        ],
+        desc: 'Il classico paesaggio da dipinto ad acquarello cinese. Colline di calcare immerse tra fiumi cristallini e natura rigogliosa.',
+        type: '🏞️ Tappa 9 • Paesaggio Carsico'
+      },
+      {
+        id: 'shanghai',
+        name: 'Shanghai',
+        category: 'metropoli',
+        coords: [31.2304, 121.4737],
+        bannerGradient: 'from-blue-900 via-indigo-900 to-slate-900',
+        bannerIcon: 'fa-city',
+        bannerPattern: '🏙️',
+        googleSearchUrl: 'https://www.google.com/search?tbm=isch&q=Shanghai+Bund+Pudong+Skyline',
+        highlights: [
+          'Treno HSR o Volo interno da Guilin',
+          'Skyline di Pudong visto dal Bund',
+          'Giardino Yuyuan, Ex Concessione Francese',
+          'Treno Maglev a 431 km/h per l\'aeroporto'
+        ],
+        desc: 'Tappa finale del tour. Goditi Il Bund illuminato, i grattacieli futuristici, l\'architettura tradizionale e la magia vibrante di Shanghai.',
+        type: '🏙️ Tappa 10 • Metropoli di Rientro'
+      },
+      {
+        id: 'yunnan_shilin',
+        name: 'Yunnan',
+        category: 'natura',
+        coords: [24.8143, 103.3245],
+        bannerGradient: 'from-emerald-950 via-purple-950 to-slate-900',
+        bannerIcon: 'fa-plus-circle',
+        bannerPattern: '✨',
+        googleSearchUrl: 'https://www.google.com/search?tbm=isch&q=Stone+Forest+Shilin+Yunnan+China',
+        highlights: [
+          'Estensione opzionale posta in fondo al viaggio',
+          'Labirinto di colonne calcaree naturali (Shilin)',
+          'Meraviglia geologica dello Yunnan (UNESCO)',
+          'Tradizioni e costumi dell\'etnia Yi'
+        ],
+        desc: 'Estensione opzionale posizionata alla fine del viaggio (richiede 2-3 giorni extra). Perfetta per ammirare la Foresta di Pietra prima del rientro.',
+        type: '✨ Estensione Opzionale'
+      }
+    ];
+
+    let favorites = new Set();
+    let map = null;
+    let markers = [];
+    let routeLine = null;
+    let currentFilter = 'all';
+    let activeTab = 'map';
+
+    function switchMainTab(tabName) {
+      activeTab = tabName;
+      const btnMap = document.getElementById('tab-btn-map');
+      const btnSchedule = document.getElementById('tab-btn-schedule');
+      const viewHeader = document.getElementById('view-destinations-header');
+      const viewMap = document.getElementById('view-destinations-map');
+      const viewCards = document.getElementById('view-destinations-cards');
+      const viewSchedule = document.getElementById('view-schedule-container');
+
+      if (tabName === 'map') {
+        btnMap.className = "py-2.5 px-5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-amber-500 text-slate-950 shadow-md flex items-center justify-center gap-2";
+        btnSchedule.className = "py-2.5 px-5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center justify-center gap-2";
+        
+        viewHeader.classList.remove('hidden');
+        viewMap.classList.remove('hidden');
+        viewCards.classList.remove('hidden');
+        viewSchedule.classList.add('hidden');
+        viewSchedule.classList.remove('flex');
+
+        if (map) {
+          setTimeout(() => map.invalidateSize(), 150);
+        }
+      } else {
+        btnSchedule.className = "py-2.5 px-5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-amber-500 text-slate-950 shadow-md flex items-center justify-center gap-2";
+        btnMap.className = "py-2.5 px-5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center justify-center gap-2";
+        
+        viewHeader.classList.add('hidden');
+        viewMap.classList.add('hidden');
+        viewCards.classList.add('hidden');
+        viewSchedule.classList.remove('hidden');
+        viewSchedule.classList.add('flex');
+
+        renderSchedule();
+      }
+    }
+
+    function renderSchedule() {
+      const scheduleList = document.getElementById('schedule-days-list');
+      if (!scheduleList) return;
+      scheduleList.innerHTML = '';
+
+      scheduleData.forEach((dayItem) => {
+        const card = document.createElement('div');
+        const isOvernight = dayItem.overnight;
+        
+        card.className = `p-4 sm:p-5 rounded-2xl border transition-all flex flex-col gap-3 h-full ${
+          isOvernight
+            ? 'bg-gradient-to-r from-purple-950/60 via-slate-900 to-purple-950/40 border-purple-500/60 shadow-lg shadow-purple-950/30'
+            : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+        }`;
+
+        const actHtml = dayItem.activities.map(act => `
+          <li class="flex items-start gap-2 text-xs text-slate-300">
+            <i class="fa-solid fa-angle-right ${isOvernight ? 'text-purple-400' : 'text-amber-400'} mt-0.5 shrink-0"></i>
+            <span>${act}</span>
+          </li>
+        `).join('');
+
+        card.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-xl ${isOvernight ? 'bg-purple-600 text-white shadow-purple-500/30' : 'bg-amber-500 text-slate-950'} font-black text-sm flex items-center justify-center shrink-0 shadow-md">
+                G${dayItem.day}
+              </span>
+              <div>
+                <h3 class="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
+                  ${dayItem.title}
+                </h3>
+                <span class="text-xs text-slate-400 font-medium">${dayItem.locName}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-start sm:self-center">
+              <span class="text-[11px] font-bold px-3 py-1 rounded-full ${isOvernight ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40' : 'bg-slate-800 text-amber-300 border border-slate-700'}">
+                ${dayItem.badge}
+              </span>
+              <button onclick="switchMainTab('map'); zoomToDest('${dayItem.destId}');" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg border border-slate-700 flex items-center gap-1">
+                <i class="fa-solid fa-location-crosshairs text-amber-400"></i> Mappa
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 text-[11px] text-slate-400 font-medium bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800/80">
+            <i class="fa-solid ${isOvernight ? 'fa-bed text-purple-400' : 'fa-train text-amber-400'}"></i>
+            <span><strong>Trasporto:</strong> ${dayItem.transport}</span>
+          </div>
+
+          <ul class="space-y-1.5 pl-1">
+            ${actHtml}
+          </ul>
+        `;
+
+        scheduleList.appendChild(card);
+      });
+    }
+
+    function initMapSafely() {
+      const mapEl = document.getElementById('map');
+      if (!mapEl) return;
+
+      if (map) {
+        try { map.remove(); } catch(e){}
+        map = null;
+      }
+
+      try {
+        map = L.map('map', {
+          tap: false,
+          scrollWheelZoom: false
+        }).setView([30.0, 108.0], 5);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; OpenStreetMap &copy; CARTO',
+          subdomains: 'abcd',
+          maxZoom: 18
+        }).addTo(map);
+
+        renderMarkers(currentFilter);
+      } catch (err) {
+        console.warn("Map loading error: ", err);
+      }
+    }
+
+    function renderMarkers(filter) {
+      if (!map) return;
+
+      markers.forEach(m => { try { map.removeLayer(m); } catch(e){} });
+      markers = [];
+      if (routeLine) {
+        try { map.removeLayer(routeLine); } catch(e){}
+      }
+
+      const filtered = destinations.filter(d => filter === 'all' || d.category === filter);
+      const routeCoords = [];
+
+      filtered.forEach((dest) => {
+        if (dest.id !== 'yunnan_shilin') {
+          routeCoords.push(dest.coords);
+        }
+        const originalIndex = destinations.findIndex(d => d.id === dest.id);
+        const isFav = favorites.has(dest.id);
+        const isOptional = dest.id === 'yunnan_shilin';
+        const markerText = isOptional ? '+' : (originalIndex > 9 ? '10' : originalIndex + 1);
+
+        const customIcon = L.divIcon({
+          className: 'custom-leaflet-marker',
+          html: `<div style="background-color: ${isOptional ? '#8b5cf6' : (isFav ? '#ef4444' : '#f59e0b')}; color: #090d16; font-weight: 800; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; box-shadow: 0 4px 8px rgba(0,0,0,0.4); font-size: ${isOptional ? '16px' : '12px'};">${markerText}</div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+
+        const marker = L.marker(dest.coords, { icon: customIcon }).addTo(map);
+        marker.destId = dest.id;
+
+        const popupContent = `
+          <div style="font-family: 'Plus Jakarta Sans', sans-serif; text-align: center; color: #f8fafc; padding: 4px; max-width: 180px;">
+            <div style="font-size: 24px; margin-bottom: 2px;">${dest.bannerPattern}</div>
+            <strong style="font-size: 13px; display: block; color: #ffffff; margin-bottom: 2px;">${dest.name}</strong>
+            <span style="font-size: 11px; color: #fbbf24; display: block; margin-bottom: 8px;">${dest.type}</span>
+            <button onclick="toggleFavorite('${dest.id}')" style="background: ${isFav ? '#dc2626' : '#334155'}; color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; width: 100%; cursor: pointer;">
+              ${isFav ? '❤️ Selezionata' : '🤍 Seleziona'}
+            </button>
+          </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        markers.push(marker);
+      });
+
+      // Main route connects core stops up to Shanghai
+      const coreRouteCoords = destinations.filter(d => d.id !== 'yunnan_shilin').map(d => d.coords);
+      if (coreRouteCoords.length > 1) {
+        routeLine = L.polyline(coreRouteCoords, {
+          color: '#f59e0b',
+          weight: 2,
+          opacity: 0.6,
+          dashArray: '6, 6'
+        }).addTo(map);
+      }
+    }
+
+    function renderTimeline(filter) {
+      const timelineList = document.getElementById('timeline-list');
+      if (!timelineList) return;
+      timelineList.innerHTML = '';
+
+      const filtered = destinations.filter(d => filter === 'all' || d.category === filter);
+
+      filtered.forEach((dest) => {
+        const originalIndex = destinations.findIndex(d => d.id === dest.id);
+        const isFav = favorites.has(dest.id);
+        const isOptional = dest.id === 'yunnan_shilin';
+        const markerText = isOptional ? '+' : (originalIndex > 9 ? '10' : originalIndex + 1);
+        
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+          isFav 
+            ? 'bg-amber-500/10 border-amber-500/60' 
+            : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'
+        }`;
+
+        card.onclick = () => {
+          zoomToDest(dest.id);
+          const cardElem = document.getElementById(`card-${dest.id}`);
+          if (cardElem) {
+            cardElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            cardElem.classList.add('ring-2', 'ring-amber-400');
+            setTimeout(() => cardElem.classList.remove('ring-2', 'ring-amber-400'), 2000);
+          }
+        };
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="w-6 h-6 rounded-full ${isOptional ? 'bg-purple-900 text-purple-300 border-purple-700' : 'bg-slate-800 text-amber-400 border-slate-700'} flex items-center justify-center font-bold text-xs shrink-0">
+              ${markerText}
+            </span>
+            <div>
+              <h4 class="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                ${dest.name}
+                ${isFav ? '<i class="fa-solid fa-heart text-red-500 text-[10px]"></i>' : ''}
+              </h4>
+              <p class="text-[10px] text-slate-400">${dest.type}</p>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right text-slate-600 text-xs"></i>
+        `;
+
+        timelineList.appendChild(card);
+      });
+    }
+
+    function renderCards(filter) {
+      const container = document.getElementById('cards-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const filtered = destinations.filter(d => filter === 'all' || d.category === filter);
+
+      filtered.forEach((dest) => {
+        const isFav = favorites.has(dest.id);
+        const card = document.createElement('div');
+        card.id = `card-${dest.id}`;
+        card.className = `bg-slate-900 border rounded-2xl overflow-hidden shadow-xl flex flex-col transition-all duration-300 ${
+          isFav ? 'border-red-500/60 ring-1 ring-red-500/30' : 'border-slate-800'
+        }`;
+
+        const highlightsHtml = dest.highlights.map(h => `
+          <li class="flex items-start gap-2 text-xs text-slate-300">
+            <i class="fa-solid fa-check text-amber-400 mt-0.5 shrink-0"></i>
+            <span>${h}</span>
+          </li>
+        `).join('');
+
+        card.innerHTML = `
+          <div class="relative h-36 sm:h-40 bg-gradient-to-br ${dest.bannerGradient} p-4 sm:p-5 flex flex-col justify-between overflow-hidden border-b border-slate-800">
+            <div class="absolute -right-3 -bottom-5 text-7xl sm:text-8xl opacity-15 select-none pointer-events-none">
+              ${dest.bannerPattern}
+            </div>
+            
+            <div class="flex items-center justify-between z-10">
+              <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-950/70 text-amber-300 border border-amber-500/30 backdrop-blur-md">
+                ${dest.type}
+              </span>
+
+              <button onclick="toggleFavorite('${dest.id}')" class="w-9 h-9 rounded-full bg-slate-950/70 border border-slate-700 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md backdrop-blur-md">
+                <i class="fa-solid fa-heart ${isFav ? 'text-red-500' : 'text-slate-400'} text-sm"></i>
+              </button>
+            </div>
+
+            <div class="z-10 flex items-center gap-3">
+              <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-950/60 border border-slate-700/80 flex items-center justify-center text-amber-400 text-lg sm:text-xl backdrop-blur-md shrink-0">
+                <i class="fa-solid ${dest.bannerIcon}"></i>
+              </div>
+              <div>
+                <h3 class="text-base sm:text-lg font-bold text-white leading-tight">${dest.name}</h3>
+                <span class="text-[10px] sm:text-[11px] text-slate-300 font-medium">Esplora attrazione</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-4 py-2.5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
+            <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
+              <i class="fa-solid fa-camera text-amber-400"></i> Vuoi vedere le foto reali?
+            </span>
+            <a 
+              href="${dest.googleSearchUrl}" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="text-[11px] text-amber-400 hover:text-amber-300 flex items-center gap-1 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 transition-all"
+            >
+              <i class="fa-brands fa-google"></i> Foto Google <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+            </a>
+          </div>
+
+          <div class="p-4 sm:p-5 flex-grow flex flex-col justify-between space-y-4">
+            <p class="text-xs text-slate-400 leading-relaxed">${dest.desc}</p>
+            
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+              <h4 class="text-xs font-bold text-slate-200 mb-2 flex items-center gap-1.5">
+                <i class="fa-solid fa-star text-amber-400"></i> Punti chiave da vedere:
+              </h4>
+              <ul class="space-y-1.5">
+                ${highlightsHtml}
+              </ul>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+              <button onclick="zoomToDest('${dest.id}')" class="flex-grow py-2.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-all border border-slate-700 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-location-crosshairs text-amber-400"></i> Mappa
+              </button>
+              <button onclick="toggleFavorite('${dest.id}')" class="px-3.5 py-2.5 ${isFav ? 'bg-red-600/20 text-red-400 border-red-500/40' : 'bg-slate-800 text-slate-300 border-slate-700'} hover:bg-red-600/30 text-xs font-semibold rounded-xl transition-all border flex items-center gap-1.5">
+                <i class="fa-solid fa-heart ${isFav ? 'text-red-500' : ''}"></i> ${isFav ? 'Preferita' : 'Vota'}
+              </button>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function zoomToDest(destId) {
+      if (activeTab !== 'map') {
+        switchMainTab('map');
+      }
+      const dest = destinations.find(d => d.id === destId);
+      if (dest && map) {
+        map.flyTo(dest.coords, 8, { duration: 1.2 });
+        const targetMarker = markers.find(m => m.destId === destId);
+        if (targetMarker) {
+          targetMarker.openPopup();
+        }
+        const mapElem = document.getElementById('map');
+        if (mapElem) {
+          mapElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+
+    function toggleFavorite(destId) {
+      if (favorites.has(destId)) {
+        favorites.delete(destId);
+      } else {
+        favorites.add(destId);
+      }
+
+      const desktopCount = document.getElementById('fav-count-desktop');
+      const mobileCount = document.getElementById('fav-count-mobile');
+      if (desktopCount) desktopCount.textContent = favorites.size;
+      if (mobileCount) mobileCount.textContent = favorites.size;
+
+      renderMarkers(currentFilter);
+      renderTimeline(currentFilter);
+      renderCards(currentFilter);
+    }
+
+    function filterDestinations(filter) {
+      currentFilter = filter;
+      ['all', 'natura', 'storia', 'metropoli'].forEach(f => {
+        const btn = document.getElementById(`btn-${f}`);
+        if (!btn) return;
+        if (f === filter) {
+          btn.className = "px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 shrink-0";
+        } else {
+          btn.className = "px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all border border-slate-700 shrink-0";
+        }
+      });
+
+      renderMarkers(filter);
+      renderTimeline(filter);
+      renderCards(filter);
+    }
+
+    function initAll() {
+      initMapSafely();
+      renderTimeline('all');
+      renderCards('all');
+      renderSchedule();
+    }
+
+    window.addEventListener('DOMContentLoaded', initAll);
+    window.addEventListener('load', () => {
+      if (map) map.invalidateSize();
+    });
+    window.addEventListener('resize', () => {
+      if (map) map.invalidateSize();
+    });
+  </script>
+</body>
+</html>
